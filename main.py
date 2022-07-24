@@ -47,7 +47,12 @@ def request_apis():
     to_wa = request.values.get('To')
     list_apis = search_in_db(query)
     if len(list_apis) > 0:
-        message = "\n".join(list_apis)
+        message = ""
+        for api in list_apis:
+            api_name = api[0]
+            api_desc = api[1]
+            api_website = api[2]
+            message = message + f"API - {api_name} \n Description - {api_desc} \n Website - {api_website} \n\n"
         send_message = client.messages.create(
             body=f"Following are your suggested APIs: \n{message}",
             from_=f'whatsapp:{to_wa}',
