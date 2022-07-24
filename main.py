@@ -50,14 +50,9 @@ def request_apis():
         query = request.values.get("query")
         list_apis = search_in_db(query)
         if len(list_apis) > 0:
-            for api in list_apis:
-                api_name = api[0]
-                api_desc = api[1]
-                api_website = api[2]
-                api = f"API - {api_name} \n Description - {api_desc} \n Website - {api_website}"
-            return "Success", 200
+            return render_template("results.html", list_apis=list_apis, status=200), 200
         else:
-            return "Not Found", 404
+            return render_template("results.html", status=404), 404
     return render_template("index.html", form=form)
 
 
