@@ -1,10 +1,15 @@
-from flask import Flask, request
+from flask import Flask, render_template, redirect, url_for, request
+from flask_bootstrap import Bootstrap
 import sqlite3
 from bs4 import BeautifulSoup
 import requests
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField
+from wtforms.validators import DataRequired
 
 app = Flask(__name__)
-
+app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
+Bootstrap(app)
 conn = sqlite3.connect("apis-collection.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -12,6 +17,11 @@ cursor = conn.cursor()
 # cursor.execute(""" CREATE TABLE api_info(id integer, api text, desc text, url text)""") #Create Table
 # conn.execute(""" CREATE VIRTUAL TABLE api_info_virtual USING fts5(api, desc, url)""") #Create Virtual Table
 # conn.commit()
+
+class SearchForm(FlaskForm):
+    query = StringField(label="Your Idea: ", validators=[DataRequired()])
+    search = SubmitField(label="Search")
+
 
 def scrape_api_data():
     URL = "https://github.com/public-apis/public-apis/blob/master/README.md"
@@ -33,20 +43,22 @@ def scrape_api_data():
 
 # scrape_api_data()
 
-
-@app.route("/request_apis", methods=['POST'])
+@app.route("/", methods=['GET', 'POST'])
 def request_apis():
-    query = request.values.get("query")
-    list_apis = search_in_db(query)
-    if len(list_apis) > 0:
-        for api in list_apis:
-            api_name = api[0]
-            api_desc = api[1]
-            api_website = api[2]
-            api = f"API - {api_name} \n Description - {api_desc} \n Website - {api_website}"
-        return "Success", 200
-    else:
-        return "Not Found", 404
+    form = SearchForm()
+    if form.validate_on_submit():
+        query = request.values.get("query")
+        list_apis = search_in_db(query)
+        if len(list_apis) > 0:
+            for api in list_apis:
+                api_name = api[0]
+                api_desc = api[1]
+                api_website = api[2]
+                api = f"API - {api_name} \n Description - {api_desc} \n Website - {api_website}"
+            return "Success", 200
+        else:
+            return "Not Found", 404
+    return render_template("index.html", form=form)
 
 
 def search_in_db(search_query: str) -> list:
