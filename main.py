@@ -2,16 +2,10 @@ from flask import Flask, request
 import sqlite3
 from bs4 import BeautifulSoup
 import requests
-import os
-from twilio.rest import Client
-
-account_sid = os.environ['TWILIO_ACCOUNT_SID']
-auth_token = os.environ['TWILIO_AUTH_TOKEN']
-client = Client(account_sid, auth_token)
 
 app = Flask(__name__)
 
-conn = sqlite3.connect("apis-collection.db")
+conn = sqlite3.connect("apis-collection.db", check_same_thread=False)
 cursor = conn.cursor()
 
 
@@ -42,29 +36,16 @@ def scrape_api_data():
 
 @app.route("/request_apis", methods=['POST'])
 def request_apis():
-    query = request.values.get('Body')
-    from_wa = request.values.get('From')
-    to_wa = request.values.get('To')
+    query = request.values.get("query")
     list_apis = search_in_db(query)
     if len(list_apis) > 0:
-        message = ""
         for api in list_apis:
             api_name = api[0]
             api_desc = api[1]
             api_website = api[2]
-            message = message + f"API - {api_name} \n Description - {api_desc} \n Website - {api_website} \n\n"
-        send_message = client.messages.create(
-            body=f"Following are your suggested APIs: \n{message}",
-            from_=f'whatsapp:{to_wa}',
-            to=f'whatsapp:{from_wa}'
-        )
+            api = f"API - {api_name} \n Description - {api_desc} \n Website - {api_website}"
         return "Success", 200
     else:
-        send_message = client.messages.create(
-            body=f"Sorry couldn't find the APIs for provided idea. 😔",
-            from_=f'whatsapp:{to_wa}',
-            to=f'whatsapp:{from_wa}'
-        )
         return "Not Found", 404
 
 
@@ -76,4 +57,4 @@ def search_in_db(search_query: str) -> list:
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=8000)
